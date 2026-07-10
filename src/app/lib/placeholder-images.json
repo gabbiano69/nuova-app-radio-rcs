@@ -1,0 +1,28 @@
+{
+  "placeholderImages": [
+    {
+      "id": "radio-logo",
+      "description": "Logo Ufficiale Radio RCS Sicilia",
+      "imageUrl": "/logo-rcs.png",
+      "imageHint": "radio logo"
+    },
+    {
+      "id": "app-icon-512",
+      "description": "Icona App per Store",
+      "imageUrl": "/logo-rcs.png",
+      "imageHint": "app icon"
+    },
+    {
+      "id": "about-hero",
+      "description": "Panorama mozzafiato della Sicilia",
+      "imageUrl": "/sicilia-panorama.jpg",
+      "imageHint": "sicily landscape"
+    },
+    {
+      "id": "about-banner",
+      "description": "Banner Promozionale Radio RCS Sicilia",
+      "imageUrl": "/banner.jpg",
+      "imageHint": "radio banner"
+    }
+  ]
+}
