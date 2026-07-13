@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
@@ -58,7 +57,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       audio.addEventListener('waiting', () => setIsLoading(true));
       audio.addEventListener('playing', () => setIsLoading(false));
       audio.addEventListener('error', () => {
-        // Rimossa console.error per evitare l'overlay di NextJS
         setIsLoading(false);
         setIsPlaying(false);
       });
@@ -70,21 +68,40 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // AGGIUNTA PERFEZIONAMENTO: Gestione Notifica Android (MediaSession)
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: nowPlaying.title,
+        artist: nowPlaying.artist,
+        album: STATION_NAME,
+        artwork: [
+          { src: nowPlaying.coverUrl || '/logo-rcs.png', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+      
+      navigator.mediaSession.setActionHandler('play', () => togglePlay());
+      navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+      navigator.mediaSession.setActionHandler('stop', () => stop());
+    }
+  }, [nowPlaying, isPlaying]);
+
   const fetchMetadata = async () => {
     const metadataUrl = `https://sr10.inmystream.it/proxy/radiorcs?mp=/7.html`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(metadataUrl)}&t=${Date.now()}`;
+    // CORREZIONE: Usiamo /raw invece di /get per evitare l'errore 500 e bypassare il CORS
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(metadataUrl)}&t=${Date.now()}`;
     
     try {
       const response = await fetch(proxyUrl);
       if (response.ok) {
-        const data = await response.json();
-        const rawText = data.contents;
+        // CORREZIONE: Con /raw leggiamo il testo direttamente (response.text())
+        const rawText = await response.text();
         
         if (rawText && typeof rawText === 'string') {
           const parts = rawText.split(',');
           if (parts.length >= 7) {
             let fullTitle = parts.slice(6).join(',');
-            // Pulizia aggressiva da tag HTML
             fullTitle = fullTitle.replace(/<[^>]*>?/gm, '').trim();
             
             if (fullTitle && fullTitle !== lastTitleRef.current && fullTitle.length > 2) {
