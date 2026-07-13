@@ -112,7 +112,20 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
               if (songInfo.length >= 2) {
                 artist = songInfo[0].trim();
-                title = songInfo[1].trim();
+                let tempTitle = songInfo[1].trim();
+
+                // --- MODIFICA INTEGRATA: PULIZIA DOPPIONE ARTISTA NEL TITOLO ---
+                // Se il titolo inizia con il nome dell'artista (es. NOEMI - NOEMI VUOTO A PERDERE)
+                if (tempTitle.toLowerCase().startsWith(artist.toLowerCase())) {
+                  // Rimuoviamo il nome dell'artista dall'inizio del titolo
+                  tempTitle = tempTitle.substring(artist.length).trim();
+                  
+                  // Puliamo eventuali trattini o simboli rimasti all'inizio
+                  if (tempTitle.startsWith('-') || tempTitle.startsWith(':') || tempTitle.startsWith('–')) {
+                    tempTitle = tempTitle.substring(1).trim();
+                  }
+                }
+                title = tempTitle;
               }
               
               setNowPlaying(prev => ({ ...prev, artist, title }));
