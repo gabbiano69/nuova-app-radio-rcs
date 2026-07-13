@@ -1,1 +1,129 @@
-.
+name: Android Build & Web Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '21'
+  GRADLE_OPTS: '-Xmx2048m -XX:+UseG1GC'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: ☕ Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'zulu'
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline
+
+      # === INTEGRAZIONE ICONE ===
+      - name: 🎨 Generate Android Assets
+        run: |
+          mkdir -p assets
+          cp public/logo-rcs.png assets/icon-only.png || true
+          npx @capacitor/assets generate --android || echo "Asset generation skipped"
+
+      # ============= LE TUE 3 FASI DI BUILD ORIGINALI =============
+      - name: 🔨 Build Web for Android
+        run: npm run build
+        env:
+          NEXT_PUBLIC_IS_APP: "true"
+          NEXT_PUBLIC_BASE_PATH: ""
+          NODE_ENV: production
+
+      - name: 💾 Backup Android build
+        run: |
+          mkdir -p builds-backup
+          cp -r out builds-backup/out-android
+
+      - name: 🔨 Build Web for Aruba Root
+        run: npm run build
+        env:
+          NEXT_PUBLIC_IS_APP: "false"
+          NEXT_PUBLIC_BASE_PATH: ""
+          NODE_ENV: production
+
+      - name: 💾 Backup Aruba Root
+        run: cp -r out builds-backup/out-aruba-root
+
+      - name: 🔨 Build Web for Aruba Subfolder (/rcs)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_IS_APP: "false"
+          NEXT_PUBLIC_BASE_PATH: "/rcs"
+          NODE_ENV: production
+
+      - name: 💾 Backup Aruba Subfolder
+        run: cp -r out builds-backup/out-aruba-subfolder
+
+      # ============= COMPILAZIONE ANDROID (POTENZIATA) =============
+      - name: 🤖 Add Android platform
+        run: npx cap add android || true
+
+      - name: 🔄 Sync Android
+        run: |
+          rm -rf out
+          mkdir -p out
+          cp -r builds-backup/out-android/* out/
+          npx cap sync android
+
+      - name: 🚀 Build Android App (APK Debug + AAB Release)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          # Generiamo l'APK per test e l'AAB per lo Store
+          ./gradlew assembleDebug bundleRelease --parallel --build-cache
+
+      # ============= ORGANIZZAZIONE FILES (MANTENUTA) =============
+      - name: 📂 Organize Files
+        run: |
+          mkdir -p deploy-package/android-release
+          mkdir -p deploy-package/web-root
+          mkdir -p deploy-package/web-subfolder-rcs
+          
+          # Copia APK e AAB
+          cp android/app/build/outputs/apk/debug/app-debug.apk deploy-package/android-release/Radio-RCS-Sicilia.apk || true
+          cp android/app/build/outputs/bundle/release/app-release.aab deploy-package/android-release/Radio-RCS-Sicilia.aab || true
+          
+          # Web Root + .htaccess (Tua logica originale)
+          cp -r builds-backup/out-aruba-root/* deploy-package/web-root/
+          echo "RewriteEngine On
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule ^(.*)$ index.html [L]" > deploy-package/web-root/.htaccess
+          
+          # Web Subfolder + .htaccess (Tua logica originale)
+          cp -r builds-backup/out-aruba-subfolder/* deploy-package/web-subfolder-rcs/
+          echo "RewriteEngine On
+          RewriteBase /rcs/
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule ^(.*)$ index.html [L]" > deploy-package/web-subfolder-rcs/.htaccess
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Radio-RCS-Sicilia-FULL-DEPLOY
+          path: deploy-package/
+          retention-days: 30
