@@ -1,0 +1,17 @@
+{
+  "name": "Radio RCS Sicilia",
+  "short_name": "Radio RCS",
+  "description": "Radio RCS Sicilia - I Grandi Successi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#e11d48",
+  "icons": [
+    {
+      "src": "/logo-rcs.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

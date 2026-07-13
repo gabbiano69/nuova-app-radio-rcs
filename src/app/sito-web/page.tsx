@@ -27,10 +27,10 @@ export default function SitoWebLandingPage() {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 text-slate-900">
-      {/* Header pulito */}
-      <div className="w-full bg-white border-b border-slate-100 py-3 px-6 sticky top-0 z-[60]">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
-          <div className="relative w-10 h-10 sm:w-12 sm:h-12 shrink-0">
+      {/* Header pulito - Logo e Scritta Ingranditi */}
+      <div className="w-full bg-white border-b border-slate-100 py-6 px-6 sticky top-0 z-[60]">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-6">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">
             <Image 
               src={`${basePath}/logo-rcs.png`}
               alt="Logo Radio RCS" 
@@ -39,7 +39,7 @@ export default function SitoWebLandingPage() {
               priority
             />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-slate-950 leading-none">
+          <h2 className="text-3xl sm:text-5xl font-black italic tracking-tighter uppercase text-slate-950 leading-none">
             Radio RCS <span className="text-primary">Sicilia</span>
           </h2>
         </div>
@@ -109,9 +109,9 @@ export default function SitoWebLandingPage() {
               </div>
             </div>
 
-            {/* Mockup Smartphone: In basso su mobile */}
+            {/* Mockup Smartphone: Leggermente rimpicciolito */}
             <div className="relative flex justify-center lg:justify-end order-2 lg:order-2 pb-6">
-              <div className="relative w-full max-w-[240px] sm:max-w-[280px] aspect-[9/18.5] rounded-[2.5rem] bg-black shadow-[0_30px_80px_-15px_rgba(0,0,0,0.5)] p-2.5 border-[6px] border-slate-900 flex flex-col overflow-hidden">
+              <div className="relative w-full max-w-[300px] sm:max-w-[360px] aspect-[9/18.5] rounded-[3.2rem] bg-black shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] p-4 border-[12px] border-slate-900 flex flex-col overflow-hidden">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[150%] player-gradient pointer-events-none opacity-40" />
                 <div className="z-10 w-full h-full flex flex-col no-scrollbar">
                   <AudioPlayer />

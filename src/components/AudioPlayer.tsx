@@ -54,7 +54,7 @@ export function AudioPlayer() {
     <div className="w-full h-full flex flex-col items-center justify-between select-none py-4 px-2 overflow-hidden">
       {/* Top Section: Logo & Status */}
       <div className="w-full flex flex-col items-center gap-2 shrink-0">
-        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-white/10 bg-white p-1 shadow-xl">
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-white/10 bg-white p-1 shadow-xl">
           <Image 
             src={`${basePath}/logo-rcs.png`}
             alt="Logo" 
@@ -88,9 +88,9 @@ export function AudioPlayer() {
         </div>
       </div>
 
-      {/* Middle Section: Cover & Text Area (STRICT CONSTRAINTS) */}
+      {/* Middle Section: Cover & Text Area */}
       <div className="flex-1 w-full flex flex-col items-center justify-center gap-3 min-h-0 overflow-hidden">
-        <div className="relative w-32 h-32 sm:w-40 sm:h-40 aspect-square rounded-xl overflow-hidden shadow-2xl border border-white/5 bg-zinc-900/50 shrink-0">
+        <div className="relative w-36 h-36 sm:w-44 sm:h-44 aspect-square rounded-xl overflow-hidden shadow-2xl border border-white/5 bg-zinc-900/50 shrink-0">
           {nowPlaying.coverUrl ? (
             <Image 
               src={nowPlaying.coverUrl} 
@@ -102,9 +102,9 @@ export function AudioPlayer() {
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
               <div className="p-3 rounded-full bg-white/5">
-                <Music className="text-white/20" size={24} />
+                <Music className="text-white/20" size={28} />
               </div>
-              <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Live Stream</p>
+              <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Live Stream</p>
             </div>
           )}
           {isLoading && (
@@ -114,32 +114,35 @@ export function AudioPlayer() {
           )}
         </div>
 
-        {/* Info Text: Clean and safe from overlap */}
-        <div className="text-center w-full max-w-[220px] px-2 flex flex-col justify-center min-h-[50px] overflow-hidden">
-          <h2 className="text-[11px] sm:text-xs font-black text-white italic tracking-tighter uppercase leading-tight line-clamp-2">
-            {nowPlaying.title || 'PRONTO ALL\'ASCOLTO...'}
+        {/* Info Text */}
+        <div className="text-center w-full max-w-[260px] px-2 flex flex-col justify-center min-h-[60px] overflow-hidden">
+          <h2 className="text-[12px] sm:text-[14px] font-black text-white italic tracking-tighter uppercase leading-tight line-clamp-2">
+            {nowPlaying.title || 'SCEGLI PLAY PER ASCOLTARE'}
           </h2>
-          <p className="text-primary font-black text-[9px] sm:text-[10px] uppercase tracking-[0.1em] truncate mt-1">
-            {nowPlaying.artist || 'RADIO RCS SICILIA'}
-          </p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <Music size={16} className="text-primary/80 shrink-0" />
+            <p className="text-primary font-black text-[14px] sm:text-[16px] uppercase tracking-[0.05em] truncate">
+              {nowPlaying.artist || 'RADIO RCS SICILIA'}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Bottom Section: Compact Controls */}
-      <div className="w-full space-y-3 shrink-0 pt-1 pb-1">
-        <div className="flex items-center justify-center gap-5">
+      <div className="w-full space-y-4 shrink-0 pt-2 pb-2">
+        <div className="flex items-center justify-center gap-6">
           <button 
             onClick={stop} 
             className="text-white/20 hover:text-destructive transition-colors active:scale-90"
             title="Stop"
           >
-            <Square size={12} fill="currentColor" />
+            <Square size={14} fill="currentColor" />
           </button>
           
           <Button
             size="icon"
             className={cn(
-              "w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg transition-all active:scale-95 border-2 border-transparent",
+              "w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg transition-all active:scale-95 border-2 border-transparent",
               isPlaying 
                 ? "bg-white text-black hover:bg-white border-white/20" 
                 : "bg-primary text-white hover:bg-primary shadow-primary/20"
@@ -148,23 +151,23 @@ export function AudioPlayer() {
             disabled={isLoading}
           >
             {isPlaying ? (
-              <Pause size={18} fill="currentColor" />
+              <Pause size={22} fill="currentColor" />
             ) : (
-              <Play size={18} className="ml-1" fill="currentColor" />
+              <Play size={22} className="ml-1" fill="currentColor" />
             )}
           </Button>
 
-          <div className="w-4 h-4 flex items-center justify-center">
-            {isPlaying && <Activity size={12} className="text-primary animate-pulse" />}
+          <div className="w-5 h-5 flex items-center justify-center">
+            {isPlaying && <Activity size={14} className="text-primary animate-pulse" />}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl backdrop-blur-md border border-white/5 max-w-[180px] mx-auto">
+        <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl backdrop-blur-md border border-white/5 max-w-[200px] mx-auto">
           <button 
             onClick={() => setIsMuted(!isMuted)} 
             className="text-white/40 hover:text-white transition-colors"
           >
-            {isMuted || volume === 0 ? <VolumeX size={12} /> : <Volume2 size={12} />}
+            {isMuted || volume === 0 ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
           <Slider
             value={[isMuted ? 0 : volume]}
