@@ -75,9 +75,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         title: nowPlaying.title,
         artist: nowPlaying.artist,
         album: STATION_NAME,
-        artwork: [
-          { src: nowPlaying.coverUrl || '/logo-rcs.png', sizes: '512x512', type: 'image/png' }
-        ]
+        // MODIFICATO: Se coverUrl è null, non forziamo il logo qui per evitare i "due loghi"
+        artwork: nowPlaying.coverUrl ? [
+          { src: nowPlaying.coverUrl, sizes: '512x512', type: 'image/png' }
+        ] : [] 
       });
       navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
       
@@ -88,14 +89,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [nowPlaying, isPlaying]);
 
   const fetchMetadata = async () => {
-    const metadataUrl = `https://sr10.inmystream.it/proxy/radiorcs?mp=/7.html`;
-    // CORREZIONE: Usiamo /raw invece di /get per evitare l'errore 500 e bypassare il CORS
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(metadataUrl)}&t=${Date.now()}`;
+    // IL TUO NUOVO PROXY PRIVATO SU CLOUDFLARE
+    const proxyUrl = `https://metadata-rcs-proxy.francescogreco1969.workers.dev/?t=${Date.now()}`;
     
     try {
       const response = await fetch(proxyUrl);
       if (response.ok) {
-        // CORREZIONE: Con /raw leggiamo il testo direttamente (response.text())
         const rawText = await response.text();
         
         if (rawText && typeof rawText === 'string') {
@@ -126,16 +125,17 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                     const cover = itunesData.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
                     setNowPlaying(prev => ({ ...prev, coverUrl: cover }));
                   } else {
+                    // MODIFICATO: Se non trovato, resta null (niente logo doppione)
                     setNowPlaying(prev => ({ ...prev, coverUrl: null }));
                   }
-                }).catch(() => {});
+                }).catch(() => {
+                  setNowPlaying(prev => ({ ...prev, coverUrl: null }));
+                });
             }
           }
         }
       }
-    } catch (e) {
-      // Errore ignorato per stabilità
-    }
+    } catch (e) {}
   };
 
   useEffect(() => {
