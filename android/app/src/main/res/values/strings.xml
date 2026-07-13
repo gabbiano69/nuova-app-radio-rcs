@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Radio RCS Sicilia</string>
+    <string name="title_activity_main">Radio RCS Sicilia</string>
+    <string name="package_name">it.rcsradio.sicilia</string>
+    <string name="custom_url_scheme">it.rcsradio.sicilia</string>
+</resources>
