@@ -37,11 +37,15 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline
 
-      # === INTEGRAZIONE ICONE ===
+      # === INTEGRAZIONE ICONE (CORRETTA) ===
       - name: 🎨 Generate Android Assets
         run: |
           mkdir -p assets
-          cp public/logo-rcs.png assets/icon-only.png || true
+          # Forniamo al tool i file con i nomi standard che si aspetta
+          cp public/logo-rcs.png assets/icon.png
+          cp public/logo-rcs.png assets/icon-only.png
+          cp public/logo-rcs.png assets/splash.png
+          cp public/logo-rcs.png assets/splash-only.png
           npx @capacitor/assets generate --android || echo "Asset generation skipped"
 
       # ============= LE TUE 3 FASI DI BUILD ORIGINALI CON PULIZIA OUT =============
@@ -76,6 +80,10 @@ jobs:
         run: |
           rm -rf out
           npm run build
+          # --- FIX MANIFEST PER SUBFOLDER ---
+          # Cerca manifest.json o site.webmanifest e corregge i percorsi per la sottocartella /rcs
+          find out -name "*.json" -o -name "*.webmanifest" | xargs -I {} sed -i 's/"src": "\//"src": "\/rcs\//g' {}
+          find out -name "*.json" -o -name "*.webmanifest" | xargs -I {} sed -i 's/"start_url": "\//"start_url": "\/rcs\//g' {}
         env:
           NEXT_PUBLIC_IS_APP: "false"
           NEXT_PUBLIC_BASE_PATH: "/rcs"
