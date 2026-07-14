@@ -80,10 +80,20 @@ jobs:
         run: |
           rm -rf out
           npm run build
-          # --- FIX MANIFEST PER SUBFOLDER ---
-          # Cerca manifest.json o site.webmanifest e corregge i percorsi per la sottocartella /rcs
-          find out -name "*.json" -o -name "*.webmanifest" | xargs -I {} sed -i 's/"src": "\//"src": "\/rcs\//g' {}
-          find out -name "*.json" -o -name "*.webmanifest" | xargs -I {} sed -i 's/"start_url": "\//"start_url": "\/rcs\//g' {}
+          echo "--- VERIFICA E FIX MANIFEST ---"
+          # Cerca il file manifest
+          MANIFEST_FILE=$(find out -name "*.json" -o -name "*.webmanifest" | head -n 1)
+          if [ -f "$MANIFEST_FILE" ]; then
+            echo "File trovato: $MANIFEST_FILE"
+            # Applica le correzioni
+            sed -i 's/"src": "\//"src": "\/rcs\//g' "$MANIFEST_FILE"
+            sed -i 's/"start_url": "\//"start_url": "\/rcs\//g' "$MANIFEST_FILE"
+            echo "Correzione completata per /rcs"
+            # Mostra le prime righe per verifica nei log
+            head -n 20 "$MANIFEST_FILE"
+          else
+            echo "ATTENZIONE: Manifest non trovato!"
+          fi
         env:
           NEXT_PUBLIC_IS_APP: "false"
           NEXT_PUBLIC_BASE_PATH: "/rcs"
