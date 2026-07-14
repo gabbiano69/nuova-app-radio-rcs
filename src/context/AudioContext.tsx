@@ -68,14 +68,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // AGGIUNTA PERFEZIONAMENTO: Gestione Notifica Android (MediaSession)
   useEffect(() => {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: nowPlaying.title,
         artist: nowPlaying.artist,
         album: STATION_NAME,
-        // MODIFICATO: Se coverUrl è null, non forziamo il logo qui per evitare i "due loghi"
         artwork: nowPlaying.coverUrl ? [
           { src: nowPlaying.coverUrl, sizes: '512x512', type: 'image/png' }
         ] : [] 
@@ -89,7 +87,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [nowPlaying, isPlaying]);
 
   const fetchMetadata = async () => {
-    // IL TUO NUOVO PROXY PRIVATO SU CLOUDFLARE
     const proxyUrl = `https://metadata-rcs-proxy.francescogreco1969.workers.dev/?t=${Date.now()}`;
     
     try {
@@ -105,32 +102,42 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             
             if (fullTitle && fullTitle !== lastTitleRef.current && fullTitle.length > 2) {
               lastTitleRef.current = fullTitle;
+              
+              // Dividiamo la stringa usando il separatore " - "
               const songInfo = fullTitle.split(' - ');
               
-              let artist = STATION_NAME;
-              let title = fullTitle;
+              let finalArtist = STATION_NAME;
+              let finalTitle = fullTitle;
 
               if (songInfo.length >= 2) {
-                artist = songInfo[0].trim();
-                let tempTitle = songInfo[1].trim();
+                // RIGA 1: Prendiamo la prima parte come Artista
+                finalArtist = songInfo[0].trim();
+                
+                // RIGA 2: Prendiamo il resto come Titolo
+                let tempTitle = songInfo.slice(1).join(' - ').trim();
 
-                // --- MODIFICA INTEGRATA: PULIZIA DOPPIONE ARTISTA NEL TITOLO ---
-                // Se il titolo inizia con il nome dell'artista (es. NOEMI - NOEMI VUOTO A PERDERE)
-                if (tempTitle.toLowerCase().startsWith(artist.toLowerCase())) {
-                  // Rimuoviamo il nome dell'artista dall'inizio del titolo
-                  tempTitle = tempTitle.substring(artist.length).trim();
+                // --- PULIZIA DUPLICATO ---
+                // Se il titolo inizia con lo stesso nome dell'artista (es. "NOEMI - NOEMI VUOTO A PERDERE")
+                if (tempTitle.toLowerCase().startsWith(finalArtist.toLowerCase())) {
+                  // Rimuoviamo l'artista dall'inizio del titolo
+                  const cleanedTitle = tempTitle.substring(finalArtist.length).trim();
                   
-                  // Puliamo eventuali trattini o simboli rimasti all'inizio
-                  if (tempTitle.startsWith('-') || tempTitle.startsWith(':') || tempTitle.startsWith('–')) {
-                    tempTitle = tempTitle.substring(1).trim();
+                  // Se dopo la pulizia il titolo non è vuoto, lo usiamo, altrimenti teniamo quello originale
+                  if (cleanedTitle.length > 0) {
+                    // Puliamo eventuali trattini o punti rimasti all'inizio (es. "- Vuoto a perdere" -> "Vuoto a perdere")
+                    finalTitle = cleanedTitle.replace(/^[\s\-\:\–\.]+/g, "").trim();
+                  } else {
+                    finalTitle = tempTitle;
                   }
+                } else {
+                  finalTitle = tempTitle;
                 }
-                title = tempTitle;
               }
               
-              setNowPlaying(prev => ({ ...prev, artist, title }));
+              // Aggiorniamo lo stato: Artist andrà in Riga 1, Title in Riga 2
+              setNowPlaying(prev => ({ ...prev, artist: finalArtist, title: finalTitle }));
               
-              const query = artist !== STATION_NAME ? `${artist} ${title}` : title;
+              const query = finalArtist !== STATION_NAME ? `${finalArtist} ${finalTitle}` : finalTitle;
               fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&limit=1&media=music`)
                 .then(res => res.json())
                 .then(itunesData => {
@@ -138,7 +145,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                     const cover = itunesData.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
                     setNowPlaying(prev => ({ ...prev, coverUrl: cover }));
                   } else {
-                    // MODIFICATO: Se non trovato, resta null (niente logo doppione)
                     setNowPlaying(prev => ({ ...prev, coverUrl: null }));
                   }
                 }).catch(() => {
@@ -181,7 +187,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       lastTitleRef.current = "";
     } else {
       setIsLoading(true);
-      setNowPlaying(prev => ({ ...prev, title: 'LIVE STREAMING...' }));
+      // Durante il caricamento, mostriamo il nome della radio e lo stato
+      setNowPlaying({ artist: STATION_NAME, title: 'LIVE STREAMING...', coverUrl: null });
       
       const freshUrl = `${STREAM_URL}${STREAM_URL.includes('?') ? '&' : '?'}_t=${Date.now()}`;
       audioRef.current.src = freshUrl;
