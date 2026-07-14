@@ -98,44 +98,51 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           const parts = rawText.split(',');
           if (parts.length >= 7) {
             let fullTitle = parts.slice(6).join(',');
+            
+            // 1. Decodifica HTML entities e pulizia tag
             fullTitle = fullTitle.replace(/<[^>]*>?/gm, '').trim();
+            fullTitle = fullTitle
+              .replace(/&APOS;/gi, "'")
+              .replace(/&#39;/g, "'")
+              .replace(/&QUOT;/gi, '"')
+              .replace(/&AMP;/gi, "&")
+              .replace(/&EGRAVE;/gi, "è")
+              .replace(/&OGRAVE;/gi, "ò")
+              .replace(/&AGRAVE;/gi, "à")
+              .replace(/&IGRAVE;/gi, "ì")
+              .replace(/&UGRAVE;/gi, "ù");
             
             if (fullTitle && fullTitle !== lastTitleRef.current && fullTitle.length > 2) {
               lastTitleRef.current = fullTitle;
               
-              // Dividiamo la stringa usando il separatore " - "
               const songInfo = fullTitle.split(' - ');
-              
               let finalArtist = STATION_NAME;
               let finalTitle = fullTitle;
 
               if (songInfo.length >= 2) {
-                // RIGA 1: Prendiamo la prima parte come Artista
+                // CASO 1: Artista - Titolo
                 finalArtist = songInfo[0].trim();
-                
-                // RIGA 2: Prendiamo il resto come Titolo
                 let tempTitle = songInfo.slice(1).join(' - ').trim();
 
-                // --- PULIZIA DUPLICATO ---
-                // Se il titolo inizia con lo stesso nome dell'artista (es. "NOEMI - NOEMI VUOTO A PERDERE")
+                // Pulizia duplicato artista nel titolo
                 if (tempTitle.toLowerCase().startsWith(finalArtist.toLowerCase())) {
-                  // Rimuoviamo l'artista dall'inizio del titolo
-                  const cleanedTitle = tempTitle.substring(finalArtist.length).trim();
-                  
-                  // Se dopo la pulizia il titolo non è vuoto, lo usiamo, altrimenti teniamo quello originale
-                  if (cleanedTitle.length > 0) {
-                    // Puliamo eventuali trattini o punti rimasti all'inizio (es. "- Vuoto a perdere" -> "Vuoto a perdere")
-                    finalTitle = cleanedTitle.replace(/^[\s\-\:\–\.]+/g, "").trim();
-                  } else {
-                    finalTitle = tempTitle;
-                  }
-                } else {
-                  finalTitle = tempTitle;
+                  tempTitle = tempTitle.substring(finalArtist.length).trim();
+                  tempTitle = tempTitle.replace(/^[\s\-\:\–\.]+/g, "").trim();
                 }
+                finalTitle = tempTitle || STATION_NAME;
+              } else {
+                // CASO 2: Solo un testo (Programma o Playlist)
+                // Mettiamo il testo in Riga 1 (Artist) e il nome radio in Riga 2 (Title)
+                finalArtist = fullTitle.trim();
+                finalTitle = STATION_NAME;
               }
               
-              // Aggiorniamo lo stato: Artist andrà in Riga 1, Title in Riga 2
-              setNowPlaying(prev => ({ ...prev, artist: finalArtist, title: finalTitle }));
+              // Applichiamo il maiuscolo a entrambi
+              setNowPlaying(prev => ({ 
+                ...prev, 
+                artist: finalArtist.toUpperCase(), 
+                title: finalTitle.toUpperCase() 
+              }));
               
               const query = finalArtist !== STATION_NAME ? `${finalArtist} ${finalTitle}` : finalTitle;
               fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&limit=1&media=music`)
@@ -187,7 +194,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       lastTitleRef.current = "";
     } else {
       setIsLoading(true);
-      // Durante il caricamento, mostriamo il nome della radio e lo stato
       setNowPlaying({ artist: STATION_NAME, title: 'LIVE STREAMING...', coverUrl: null });
       
       const freshUrl = `${STREAM_URL}${STREAM_URL.includes('?') ? '&' : '?'}_t=${Date.now()}`;
