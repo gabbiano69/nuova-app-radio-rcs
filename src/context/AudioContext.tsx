@@ -124,20 +124,26 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                 finalArtist = songInfo[0].trim();
                 let tempTitle = songInfo.slice(1).join(' - ').trim();
 
-                // Pulizia duplicato artista nel titolo
-                if (tempTitle.toLowerCase().startsWith(finalArtist.toLowerCase())) {
-                  tempTitle = tempTitle.substring(finalArtist.length).trim();
-                  tempTitle = tempTitle.replace(/^[\s\-\:\–\.]+/g, "").trim();
+                // --- LOGICA ECCEZIONI (CELENTANO / DEMIS) ---
+                const lowerArtist = finalArtist.toLowerCase();
+                const lowerTitle = tempTitle.toLowerCase();
+
+                if (lowerTitle.includes(lowerArtist)) {
+                  // Troviamo la posizione dell'artista nel titolo
+                  const artistPos = lowerTitle.indexOf(lowerArtist);
+                  // Rimuoviamo l'artista e tutto ciò che c'è PRIMA (es. "ADRIANO ")
+                  tempTitle = tempTitle.substring(artistPos + finalArtist.length).trim();
                 }
-                finalTitle = tempTitle || STATION_NAME;
+
+                // Pulizia simboli rimasti all'inizio
+                finalTitle = tempTitle.replace(/^[\s\-\:\–\.\/]+/g, "").trim() || STATION_NAME;
               } else {
                 // CASO 2: Solo un testo (Programma o Playlist)
-                // Mettiamo il testo in Riga 1 (Artist) e il nome radio in Riga 2 (Title)
                 finalArtist = fullTitle.trim();
                 finalTitle = STATION_NAME;
               }
               
-              // Applichiamo il maiuscolo a entrambi
+              // Applichiamo il maiuscolo per estetica radiofonica
               setNowPlaying(prev => ({ 
                 ...prev, 
                 artist: finalArtist.toUpperCase(), 
