@@ -33,17 +33,39 @@ export function AudioPlayer() {
   }, []);
 
   const handleShare = async () => {
-    const shareText = `Sto ascoltando Radio RCS Sicilia - I Grandi Successi! 📻\nhttps://www.rcsradio.it`;
+    // 1. Recuperiamo i dati attuali (assumendo che nowPlaying sia accessibile nel componente)
+    const { artist, title, coverUrl } = nowPlaying;
+  
+    // 2. Costruiamo il testo dinamico
+    // Se la radio è in stop, usiamo un testo generico, altrimenti usiamo Artista - Titolo
+    const isPlayingNow = artist !== "Radio RCS Sicilia" || title !== "SCEGLI PLAY PER ASCOLTARE";
+    
+    const songInfo = isPlayingNow 
+      ? `${artist} - ${title}` 
+      : "I Grandi Successi";
+  
+    const shareText = `Sto ascoltando ${songInfo} su Radio RCS Sicilia - I Grandi Successi! 📻\nVieni ad ascoltarla anche Tu!`;
+    const websiteUrl = 'https://www.rcsradio.it';
+  
     try {
+      const { Share } = await import('@capacitor/share'); // Import dinamico se necessario
       const canShare = await Share.canShare();
+  
       if (canShare.value) {
-        await Share.share({ title: 'Radio RCS Sicilia', text: shareText, url: 'https://www.rcsradio.it' });
+        await Share.share({
+          title: 'Radio RCS Sicilia',
+          text: shareText,
+          url: websiteUrl, // Il link alla radio
+          dialogTitle: 'Condividi con i tuoi amici',
+        });
       } else {
-        await navigator.clipboard.writeText(shareText);
+        // Fallback per browser PC
+        await navigator.clipboard.writeText(`${shareText} ${websiteUrl}`);
         toast({ title: "Link Copiato!", description: "Incolla dove preferisci per condividere." });
       }
     } catch (e) {
-      await navigator.clipboard.writeText(shareText);
+      // Fallback in caso di errore
+      await navigator.clipboard.writeText(`${shareText} ${websiteUrl}`);
       toast({ title: "Link Copiato!" });
     }
   };
@@ -115,13 +137,13 @@ export function AudioPlayer() {
         </div>
 
         {/* Info Text */}
-        <div className="text-center w-full max-w-[260px] px-2 flex flex-col justify-center min-h-[60px] overflow-hidden">
+        <div className="text-center w-full max-w-[300px] px-2 flex flex-col justify-center min-h-[60px] overflow-hidden">
           <h2 className="text-[12px] sm:text-[14px] font-black text-white italic tracking-tighter uppercase leading-tight line-clamp-2">
             {nowPlaying.title || 'SCEGLI PLAY PER ASCOLTARE'}
           </h2>
           <div className="flex items-center justify-center gap-2 mt-2">
             <Music size={16} className="text-primary/80 shrink-0" />
-            <p className="text-primary font-black text-[14px] sm:text-[16px] uppercase tracking-[0.05em] truncate">
+            <p className="text-primary font-black text-[12px] sm:text-[14px] uppercase tracking-[0.05em] truncate">
               {nowPlaying.artist || 'RADIO RCS SICILIA'}
             </p>
           </div>
