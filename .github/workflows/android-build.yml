@@ -85,11 +85,13 @@ jobs:
           MANIFEST_FILE=$(find out -name "*.json" -o -name "*.webmanifest" | head -n 1)
           if [ -f "$MANIFEST_FILE" ]; then
             echo "File trovato: $MANIFEST_FILE"
-            # Applica le correzioni
+            # Correzione icone: aggiunge /rcs/ davanti al percorso
             sed -i 's/"src": "\//"src": "\/rcs\//g' "$MANIFEST_FILE"
-            sed -i 's/"start_url": "\//"start_url": "\/rcs\//g' "$MANIFEST_FILE"
-            echo "Correzione completata per /rcs"
-            # Mostra le prime righe per verifica nei log
+            # Correzione start_url: imposta /rcs (senza slash finale per Aruba)
+            sed -i 's/"start_url": "\//"start_url": "\/rcs/g' "$MANIFEST_FILE"
+            
+            echo "Correzione completata per /rcs (senza slash finale)"
+            # Mostra il risultato per verifica nei log di GitHub
             head -n 20 "$MANIFEST_FILE"
           else
             echo "ATTENZIONE: Manifest non trovato!"
