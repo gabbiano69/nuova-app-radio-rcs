@@ -160,7 +160,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isPlaying) {
       fetchMetadata();
-      metadataIntervalRef.current = setInterval(fetchMetadata, 15000);
+      metadataIntervalRef.current = setInterval(fetchMetadata, 10000);
     } else {
       if (metadataIntervalRef.current) clearInterval(metadataIntervalRef.current);
     }
