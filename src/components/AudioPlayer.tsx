@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -10,7 +9,6 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useAudio } from '@/context/AudioContext';
 import { useToast } from '@/hooks/use-toast';
-import { Share } from '@capacitor/share';
 
 export function AudioPlayer() {
   const { 
@@ -33,38 +31,31 @@ export function AudioPlayer() {
   }, []);
 
   const handleShare = async () => {
-    // 1. Recuperiamo i dati attuali (assumendo che nowPlaying sia accessibile nel componente)
-    const { artist, title, coverUrl } = nowPlaying;
+    const { artist, title } = nowPlaying;
   
-    // 2. Costruiamo il testo dinamico
-    // Se la radio è in stop, usiamo un testo generico, altrimenti usiamo Artista - Titolo
-    const isPlayingNow = artist !== "Radio RCS Sicilia" || title !== "SCEGLI PLAY PER ASCOLTARE";
-    
-    const songInfo = isPlayingNow 
-      ? `${artist} - ${title}` 
-      : "I Grandi Successi";
+    // TESTO DI CONDIVISIONE DINAMICO
+    const isPlayingNow = artist !== "RADIO RCS SICILIA" && title !== "SCEGLI PLAY PER ASCOLTARE";
+    const songInfo = isPlayingNow ? `${artist} - ${title}` : "I Grandi Successi";
   
-    const shareText = `Sto ascoltando ${songInfo} su Radio RCS Sicilia - I Grandi Successi! 📻\nVieni ad ascoltarla anche Tu!`;
+    const shareText = `Sto ascoltando ${songInfo} su Radio RCS Sicilia! 📻\nVieni ad ascoltarla anche Tu!`;
     const websiteUrl = 'https://www.rcsradio.it';
   
     try {
-      const { Share } = await import('@capacitor/share'); // Import dinamico se necessario
+      const { Share } = await import('@capacitor/share');
       const canShare = await Share.canShare();
   
       if (canShare.value) {
         await Share.share({
           title: 'Radio RCS Sicilia',
           text: shareText,
-          url: websiteUrl, // Il link alla radio
+          url: websiteUrl,
           dialogTitle: 'Condividi con i tuoi amici',
         });
       } else {
-        // Fallback per browser PC
         await navigator.clipboard.writeText(`${shareText} ${websiteUrl}`);
         toast({ title: "Link Copiato!", description: "Incolla dove preferisci per condividere." });
       }
     } catch (e) {
-      // Fallback in caso di errore
       await navigator.clipboard.writeText(`${shareText} ${websiteUrl}`);
       toast({ title: "Link Copiato!" });
     }
@@ -136,15 +127,17 @@ export function AudioPlayer() {
           )}
         </div>
 
-        {/* Info Text */}
+        {/* Info Text: INVERTITI RIGA 1 E RIGA 2 */}
         <div className="text-center w-full max-w-[300px] px-2 flex flex-col justify-center min-h-[60px] overflow-hidden">
+          {/* RIGA 1: ARTISTA (GRANDE E IN BIANCO) */}
           <h2 className="text-[12px] sm:text-[14px] font-black text-white italic tracking-tighter uppercase leading-tight line-clamp-2">
-            {nowPlaying.title || 'SCEGLI PLAY PER ASCOLTARE'}
+            {nowPlaying.artist || 'RADIO RCS SICILIA'}
           </h2>
+          {/* RIGA 2: TITOLO (SOTTO E IN COLORE PRIMARY) */}
           <div className="flex items-center justify-center gap-2 mt-2">
             <Music size={16} className="text-primary/80 shrink-0" />
             <p className="text-primary font-black text-[12px] sm:text-[14px] uppercase tracking-[0.05em] truncate">
-              {nowPlaying.artist || 'RADIO RCS SICILIA'}
+              {nowPlaying.title || 'I GRANDI SUCCESSI'}
             </p>
           </div>
         </div>
