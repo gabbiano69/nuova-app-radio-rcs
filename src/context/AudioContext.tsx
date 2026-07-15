@@ -25,7 +25,7 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 const STREAM_URL = 'https://sr10.inmystream.it/proxy/radiorcs?mp=/stream';
-const STATION_NAME = "Radio RCS Sicilia";
+const STATION_NAME = "RADIO RCS SICILIA";
 
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -43,6 +43,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const lastTitleRef = useRef<string>("");
   const { toast } = useToast();
 
+  // Funzione per richiedere permessi notifica (Vitale per Android 13+)
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission();
+        } catch (e) {
+          console.error("Errore richiesta permessi", e);
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     if (typeof Audio !== 'undefined' && !audioRef.current) {
       const audio = new Audio();
@@ -59,6 +72,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       audio.addEventListener('error', () => {
         setIsLoading(false);
         setIsPlaying(false);
+        // Se c'è un errore (es. standby prolungato), resettiamo il sorgente
+        if (audioRef.current) audioRef.current.src = "";
       });
 
       audioRef.current = audio;
@@ -99,7 +114,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           if (parts.length >= 7) {
             let fullTitle = parts.slice(6).join(',');
             
-            // 1. Decodifica HTML entities e pulizia tag
+            // 1. Decodifica HTML e caratteri speciali
             fullTitle = fullTitle.replace(/<[^>]*>?/gm, '').trim();
             fullTitle = fullTitle
               .replace(/&APOS;/gi, "'")
@@ -115,35 +130,33 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             if (fullTitle && fullTitle !== lastTitleRef.current && fullTitle.length > 2) {
               lastTitleRef.current = fullTitle;
               
-              const songInfo = fullTitle.split(' - ');
+              // Supporto a diversi tipi di trattini (regolare, en-dash, em-dash)
+              const songInfo = fullTitle.split(/\s+[\-\–\—]\s+/);
+              
               let finalArtist = STATION_NAME;
               let finalTitle = fullTitle;
 
               if (songInfo.length >= 2) {
-                // CASO 1: Artista - Titolo
                 finalArtist = songInfo[0].trim();
                 let tempTitle = songInfo.slice(1).join(' - ').trim();
 
-                // --- LOGICA ECCEZIONI (CELENTANO / DEMIS) ---
+                // LOGICA PULIZIA ECCEZIONI (es. BALSAMO - UMBERTO BALSAMO...)
                 const lowerArtist = finalArtist.toLowerCase();
                 const lowerTitle = tempTitle.toLowerCase();
 
                 if (lowerTitle.includes(lowerArtist)) {
-                  // Troviamo la posizione dell'artista nel titolo
                   const artistPos = lowerTitle.indexOf(lowerArtist);
-                  // Rimuoviamo l'artista e tutto ciò che c'è PRIMA (es. "ADRIANO ")
+                  // Taglia l'artista e tutto ciò che lo precede nella riga 2
                   tempTitle = tempTitle.substring(artistPos + finalArtist.length).trim();
                 }
 
                 // Pulizia simboli rimasti all'inizio
                 finalTitle = tempTitle.replace(/^[\s\-\:\–\.\/]+/g, "").trim() || STATION_NAME;
               } else {
-                // CASO 2: Solo un testo (Programma o Playlist)
                 finalArtist = fullTitle.trim();
                 finalTitle = STATION_NAME;
               }
               
-              // Applichiamo il maiuscolo per estetica radiofonica
               setNowPlaying(prev => ({ 
                 ...prev, 
                 artist: finalArtist.toUpperCase(), 
@@ -188,12 +201,15 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
   }, [volume, isMuted]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (!audioRef.current) return;
+
+    // Chiediamo il permesso per le notifiche prima di partire
+    await requestNotificationPermission();
     
     if (isPlaying) {
       audioRef.current.pause();
-      audioRef.current.src = "";
+      audioRef.current.src = ""; // Fondamentale per resettare lo stream
       audioRef.current.load();
       setIsPlaying(false);
       setNowPlaying({ artist: STATION_NAME, title: 'SCEGLI PLAY PER ASCOLTARE', coverUrl: null });
@@ -202,6 +218,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setNowPlaying({ artist: STATION_NAME, title: 'LIVE STREAMING...', coverUrl: null });
       
+      // Reset preventivo per sbloccare i comandi
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+
       const freshUrl = `${STREAM_URL}${STREAM_URL.includes('?') ? '&' : '?'}_t=${Date.now()}`;
       audioRef.current.src = freshUrl;
       audioRef.current.play()
