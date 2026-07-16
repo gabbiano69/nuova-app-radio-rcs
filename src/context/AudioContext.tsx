@@ -130,29 +130,43 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             if (fullTitle && fullTitle !== lastTitleRef.current && fullTitle.length > 2) {
               lastTitleRef.current = fullTitle;
               
-              // Supporto a diversi tipi di trattini (regolare, en-dash, em-dash)
+              // Supporto a diversi tipi di trattini
               const songInfo = fullTitle.split(/\s+[\-\–\—]\s+/);
               
               let finalArtist = STATION_NAME;
               let finalTitle = fullTitle;
 
               if (songInfo.length >= 2) {
-                finalArtist = songInfo[0].trim();
-                let tempTitle = songInfo.slice(1).join(' - ').trim();
+                let partA = songInfo[0].trim();
+                let partB = songInfo.slice(1).join(' - ').trim();
 
-                // LOGICA PULIZIA ECCEZIONI (es. BALSAMO - UMBERTO BALSAMO...)
-                const lowerArtist = finalArtist.toLowerCase();
-                const lowerTitle = tempTitle.toLowerCase();
+                const lowerA = partA.toLowerCase();
+                const lowerB = partB.toLowerCase();
 
-                if (lowerTitle.includes(lowerArtist)) {
-                  const artistPos = lowerTitle.indexOf(lowerArtist);
-                  // Taglia l'artista e tutto ciò che lo precede nella riga 2
-                  tempTitle = tempTitle.substring(artistPos + finalArtist.length).trim();
+                // --- LOGICA DI PULIZIA AVANZATA (Rilevamento Inversione) ---
+                // Caso Modugno: A="Domenico Modugno Amara terra mia" B="Modugno"
+                if (lowerA.includes(lowerB)) {
+                  finalArtist = partB;
+                  const pos = lowerA.indexOf(lowerB);
+                  // Taglia via il nome dell'artista e tutto quello che c'è prima nel titolo
+                  finalTitle = partA.substring(pos + lowerB.length).trim();
+                } 
+                // Caso Invertito: A="Modugno" B="Domenico Modugno Amara terra mia"
+                else if (lowerB.includes(lowerA)) {
+                  finalArtist = partA;
+                  const pos = lowerB.indexOf(lowerA);
+                  finalTitle = partB.substring(pos + lowerA.length).trim();
+                } 
+                else {
+                  // Caso standard: A="Artista" B="Titolo"
+                  finalArtist = partA;
+                  finalTitle = partB;
                 }
 
-                // Pulizia simboli rimasti all'inizio
-                finalTitle = tempTitle.replace(/^[\s\-\:\–\.\/]+/g, "").trim() || STATION_NAME;
+                // Pulizia simboli rimasti all'inizio del titolo
+                finalTitle = finalTitle.replace(/^[\s\-\:\–\.\/]+/g, "").trim() || STATION_NAME;
               } else {
+                // Caso senza trattino: tutto su riga 1
                 finalArtist = fullTitle.trim();
                 finalTitle = STATION_NAME;
               }
